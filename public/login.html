@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Create Account</title>
+  <title>Login — Vacant House</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -51,21 +51,19 @@
 </head>
 <body>
 
-  <h2>Create Account</h2>
+  <h2>Login</h2>
 
-  <form id="signupForm">
-    <input id="name" placeholder="Full Name" required>
+  <form id="loginForm">
     <input id="phone" placeholder="Phone e.g 0712345678" required>
     <input id="password" type="password" placeholder="Password" required>
-    <input id="confirm" type="password" placeholder="Confirm Password" required>
-    <button type="submit">Sign Up</button>
+    <button type="submit">Login</button>
   </form>
 
-  <p>Already have an account? <span class="link" onclick="gotoLogin()">Login</span></p>
+  <p>Don’t have an account? <span class="link" onclick="gotoSignup()">Sign Up</span></p>
 
   <script>
-    function gotoLogin() {
-      window.location.href = "login.html";
+    function gotoSignup() {
+      window.location.href = "signup.html";
     }
 
     // ✅ Automatically detect backend (local or Render)
@@ -74,44 +72,47 @@
         ? "http://localhost:5000/api"
         : "https://vacanthouse.onrender.com/api";
 
-    // ✅ Handle Signup
-    document.getElementById("signupForm").addEventListener("submit", async function (e) {
+    // ✅ Handle Login
+    document.getElementById("loginForm").addEventListener("submit", async function (e) {
       e.preventDefault();
 
-      const name = document.getElementById("name").value.trim();
       const phone = document.getElementById("phone").value.trim();
       const pass = document.getElementById("password").value.trim();
-      const confirm = document.getElementById("confirm").value.trim();
 
-      if (!name || !phone || !pass || !confirm) {
-        alert("⚠️ All fields are required.");
-        return;
-      }
-
-      if (pass !== confirm) {
-        alert("❌ Passwords do not match.");
+      if (!phone || !pass) {
+        alert("⚠️ Please enter both phone and password.");
         return;
       }
 
       try {
-        const res = await fetch(API + "/signup", {
+        const res = await fetch(API + "/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, phone, pass })
+          body: JSON.stringify({ phone, pass })
         });
 
         const data = await res.json();
 
-        if (!data.success) {
-          alert("⚠️ " + (data.message || "Could not register. Try again."));
+        if (!res.ok || !data.success) {
+          alert(data.message || "❌ Invalid phone or password.");
           return;
         }
 
-        alert("✅ Account created successfully! You can now log in.");
-        window.location.href = "login.html";
-      } catch (err) {
-        console.error("Signup error:", err);
-        alert("⚠️ Unable to connect to server. Please check your connection.");
+        // ✅ Save user session
+        localStorage.setItem("userToken", data.token);
+        localStorage.setItem("userData", JSON.stringify(data.user));
+
+        alert("✅ Login successful!");
+
+        // ✅ Redirect based on role
+        if (data.user.isAdmin === true) {
+          window.location.href = "admin_dashboard.html"; // admin page
+        } else {
+          window.location.href = "index.html"; // user homepage
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        alert("⚠️ Could not connect to the server. Please check your connection.");
       }
     });
   </script>

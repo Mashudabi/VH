@@ -1,3 +1,4 @@
+<script>
 document.getElementById("loginForm").addEventListener("submit", async function (e) {
   e.preventDefault();
 
@@ -9,8 +10,14 @@ document.getElementById("loginForm").addEventListener("submit", async function (
     return;
   }
 
+  // 👇 Automatically use your live backend when hosted
+  const BASE_URL =
+    window.location.hostname === "localhost"
+      ? "http://localhost:5000"
+      : "https://vacanthouse.onrender.com";
+
   try {
-    const res = await fetch("http://localhost:5000/api/login", {
+    const res = await fetch(`${BASE_URL}/api/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone, pass })
@@ -31,9 +38,9 @@ document.getElementById("loginForm").addEventListener("submit", async function (
 
     // ✅ Redirect based on role
     if (data.user.isAdmin === true) {
-      window.location.href = "admin_dashboard.html"; // Admin page
+      window.location.href = "admin_dashboard.html";
     } else {
-      window.location.href = "index.html"; // Regular user home page
+      window.location.href = "index.html";
     }
 
   } catch (error) {
@@ -41,3 +48,4 @@ document.getElementById("loginForm").addEventListener("submit", async function (
     alert("⚠️ Could not connect to the server. Please check your connection.");
   }
 });
+</script>
