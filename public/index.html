@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,7 +7,7 @@
 
 <style>
 :root {
-  --bg: linear-gradient(135deg, #007bff, #00ff88); /* ✅ Blue-green gradient */
+  --bg: linear-gradient(135deg, #007bff, #00ff88);
   --card: #ffffff;
   --primary: #0d6efd;
   --dark: #111;
@@ -23,7 +23,6 @@ body {
   min-height:100vh;
   color:var(--dark);
 }
-
 header {
   background: var(--primary);
   color: white;
@@ -32,22 +31,14 @@ header {
   font-weight: bold;
   display:flex; justify-content:space-between; align-items:center;
 }
-
 .container { padding: 12px; }
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
-
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .card {
   background: var(--card);
   border-radius: 10px;
   padding: 10px;
   box-shadow: 0 2px 8px rgba(0,0,0,.06);
 }
-
 .amount-card {
   padding: 8px;
   background:#fff;
@@ -57,7 +48,6 @@ header {
 }
 .amount-card:hover { border:1px solid var(--primary); }
 .tiny { font-size: 12px; color:var(--tiny); }
-
 button {
   padding:10px;
   border:none;
@@ -67,7 +57,6 @@ button {
   color:white;
   font-size:16px;
 }
-
 input {
   width:100%;
   padding:10px;
@@ -75,21 +64,15 @@ input {
   border:1px solid #ccc;
   border-radius:6px;
 }
-
 .hidden { display:none; }
-
 .profile-box { padding:12px; }
-
 .link {
   color:#0000ff;
   font-size:14px;
   text-decoration:underline;
   cursor:pointer;
 }
-.center-card {
-  max-width:360px;
-  margin:40px auto;
-}
+.center-card { max-width:360px; margin:40px auto; }
 .back-arrow {
   font-size:18px;
   cursor:pointer;
@@ -99,7 +82,6 @@ input {
 }
 .house-img { width:100%; height:220px; object-fit:cover; border-radius:8px; }
 .small { font-size:13px }
-
 @media (min-width:800px){
   .grid{grid-template-columns:repeat(3,1fr)}
   .center-card{max-width:420px}
@@ -181,7 +163,11 @@ input {
 </div>
 
 <script>
-const API = "http://localhost:5000/api";
+const API =
+  location.hostname === "localhost"
+    ? "http://localhost:5000/api"
+    : "https://vacanthouse.onrender.com/api";
+
 let token = localStorage.getItem("userToken");
 let currentUser = JSON.parse(localStorage.getItem("userData") || "null");
 
@@ -203,7 +189,6 @@ async function signup(){
     body: JSON.stringify({name, phone, pass})
   });
   const data = await res.json();
-
   if(!data.success) return alert(data.message || "Signup failed");
 
   alert("✅ Account created! Please login.");
@@ -220,7 +205,6 @@ async function login(){
     headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({phone, pass})
   });
-
   const data = await res.json();
 
   if(!data.success) return alert("Invalid phone or password");
@@ -232,17 +216,13 @@ async function login(){
     window.location = "admin_dashboard.html";
     return;
   }
-
   token = data.token;
   currentUser = data.user;
   showMain();
 }
 
 // ✅ LOGOUT
-function logout(){
-  localStorage.clear();
-  location.reload();
-}
+function logout(){ localStorage.clear(); location.reload(); }
 
 // ✅ LOAD HOUSES
 async function loadHouses(){
@@ -254,7 +234,7 @@ async function loadHouses(){
     const div = document.createElement("div");
     div.className = "amount-card card";
     div.innerHTML = `
-      <img src="http://localhost:5000${h.image}" style="width:100%;height:140px;border-radius:8px;object-fit:cover;">
+      <img src="${API.replace('/api','')}${h.image}" style="width:100%;height:140px;border-radius:8px;object-fit:cover;">
       <div style="margin-top:8px;font-weight:700;">KES ${h.price.toLocaleString()}</div>
       <div class="tiny">${h.location}</div>
     `;
@@ -267,7 +247,7 @@ async function loadHouses(){
 let selectedHouse = null;
 function openDetails(h){
   selectedHouse = h;
-  detImg.src = "http://localhost:5000"+h.image;
+  detImg.src = API.replace('/api','') + h.image;
   detPrice.textContent = `KES ${h.price.toLocaleString()}`;
   detLoc.textContent = h.location;
 
@@ -278,7 +258,6 @@ function openDetails(h){
   mainPage.classList.add("hidden");
   detailsPage.classList.remove("hidden");
 }
-
 detailsBack.onclick = ()=>{ detailsPage.classList.add("hidden"); mainPage.classList.remove("hidden"); }
 
 // ✅ PAY / BOOK
@@ -302,10 +281,8 @@ async function proceedPayment(){
       amount:selectedHouse.price
     })
   });
-
   const data = await res.json();
   alert(data.message || "Booking complete!");
-
   showProfile();
 }
 
@@ -314,31 +291,26 @@ profileBtn.onclick = showProfile;
 function showProfile(){
   pfName.textContent = currentUser.name;
   pfPhone.textContent = currentUser.phone;
-
   detailsPage.classList.add("hidden");
   mainPage.classList.add("hidden");
   profilePage.classList.remove("hidden");
-
   loadBookings();
 }
 
-// ✅ BACK TO DASHBOARD BUTTON
+// ✅ BACK TO DASHBOARD
 backArrow.onclick = ()=>{ profilePage.classList.add("hidden"); mainPage.classList.remove("hidden"); };
 
-// ✅ LOAD BOOKINGS (Pending or Approved)
+// ✅ LOAD BOOKINGS
 async function loadBookings(){
   const res = await fetch(API+"/bookings", {
     headers:{ "Authorization":"Bearer " + token }
   });
   const data = await res.json();
-
   bookingsList.innerHTML = "";
-
   if(!data || data.length === 0){
     bookingsList.innerHTML = "<div>No bookings yet.</div>";
     return;
   }
-
   data.forEach(b=>{
     const div = document.createElement("div");
     div.style.marginBottom = "8px";
@@ -352,19 +324,12 @@ async function loadBookings(){
     bookingsList.appendChild(div);
   });
 }
-
-function continueToPay(id){
-  alert("Redirecting to payment for booking ID: "+id);
-  // Add payment gateway redirect here
-}
+function continueToPay(id){ alert("Redirecting to payment for booking ID: "+id); }
 
 // ✅ Auto session login
 if(token && currentUser){
-  if(currentUser.isAdmin){
-    window.location = "admin_dashboard.html";
-  } else {
-    showMain();
-  }
+  if(currentUser.isAdmin){ window.location = "admin_dashboard.html"; }
+  else { showMain(); }
 }
 
 async function showMain(){
@@ -372,10 +337,8 @@ async function showMain(){
   signupPage.classList.add("hidden");
   profilePage.classList.add("hidden");
   detailsPage.classList.add("hidden");
-
   topHeader.classList.remove("hidden");
   mainPage.classList.remove("hidden");
-
   await loadHouses();
 }
 </script>
