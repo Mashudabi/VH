@@ -78,8 +78,13 @@
   </main>
 
   <script>
-    const API = "http://localhost:5000/api";
-    const user = JSON.parse(localStorage.getItem("user"));
+    // ✅ Automatically switch between local and Render backend
+    const API =
+      location.hostname === "localhost"
+        ? "http://localhost:5000/api"
+        : "https://vacanthouse.onrender.com/api";
+
+    const user = JSON.parse(localStorage.getItem("userData")); // ensure same key used across site
 
     if (!user) {
       alert("You need to log in first!");
@@ -97,27 +102,34 @@
         const list = document.getElementById("bookingsList");
         list.innerHTML = "";
 
-        if (!data || data.length === 0) {
+        if (!Array.isArray(data) || data.length === 0) {
           list.textContent = "No bookings yet.";
           return;
         }
 
-        data
-          .filter(b => b.customerPhone === user.phone)
-          .forEach(b => {
-            const div = document.createElement("div");
-            div.className = "booking";
-            div.innerHTML = `
-              <b>${b.houseTitle}</b><br>
-              Amount: KES ${b.amount}<br>
-              Status: ${b.status}<br>
-              Date: ${new Date(b.createdAt).toLocaleString()}
-            `;
-            list.appendChild(div);
-          });
+        // Filter bookings for the logged-in user
+        const userBookings = data.filter(b => b.customerPhone === user.phone);
+
+        if (userBookings.length === 0) {
+          list.textContent = "No bookings found for your account.";
+          return;
+        }
+
+        userBookings.forEach(b => {
+          const div = document.createElement("div");
+          div.className = "booking";
+          div.innerHTML = `
+            <b>${b.houseTitle}</b><br>
+            Amount: KES ${b.amount}<br>
+            Status: ${b.status}<br>
+            Date: ${new Date(b.createdAt).toLocaleString()}
+          `;
+          list.appendChild(div);
+        });
       } catch (err) {
-        console.error(err);
-        document.getElementById("bookingsList").textContent = "Failed to load bookings.";
+        console.error("Error loading bookings:", err);
+        document.getElementById("bookingsList").textContent =
+          "⚠️ Failed to load bookings. Please try again.";
       }
     }
 
