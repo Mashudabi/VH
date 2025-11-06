@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Account</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #f0f4ff, #fff8e1);
+    }
+    h2 {
+      color: #0d6efd;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 250px;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      width: 250px;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      background: #0d6efd;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #084fc7;
+    }
+    p {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .link {
+      color: #0d6efd;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Create Account</h2>
+
+  <form id="signupForm">
+    <input id="name" placeholder="Full Name" required>
+    <input id="phone" placeholder="Phone e.g 0712345678" required>
+    <input id="password" type="password" placeholder="Password" required>
+    <input id="confirm" type="password" placeholder="Confirm Password" required>
+    <button type="submit">Sign Up</button>
+  </form>
+
+  <p>Already have an account? <span class="link" onclick="gotoLogin()">Login</span></p>
+
+  <script>
+    function gotoLogin() {
+      window.location.href = "login.html";
+    }
+
+    document.getElementById("signupForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      const confirm = document.getElementById("confirm").value.trim();
+
+      if (!name || !phone || !pass || !confirm) {
+        alert("⚠️ All fields are required.");
+        return;
+      }
+
+      if (pass !== confirm) {
+        alert("❌ Passwords do not match.");
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:5000/api/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, phone, pass })
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+          alert("⚠️ " + (data.message || "Could not register. Try again."));
+          return;
+        }
+
+        alert("✅ Account created successfully! You can now log in.");
+        window.location.href = "login.html";
+      } catch (err) {
+        console.error("Signup error:", err);
+        alert("⚠️ Unable to connect to server.");
+      }
+    });
+  </script>
+
+</body>
+</html>

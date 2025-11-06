@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #0d6efd;
+      color: white;
+      padding: 12px 20px;
+      font-size: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    main {
+      padding: 20px;
+      max-width: 600px;
+      margin: 20px auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-top: 0;
+    }
+    .info {
+      font-size: 16px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .bookings {
+      margin-top: 20px;
+    }
+    .booking {
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      background: #fafafa;
+    }
+    button {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #c82333;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    Client Dashboard
+    <button onclick="logout()">Logout</button>
+  </header>
+
+  <main>
+    <h2>Welcome, <span id="userName"></span></h2>
+    <div class="info">
+      <b>Phone:</b> <span id="userPhone"></span><br />
+    </div>
+
+    <div class="bookings">
+      <h3>Your Bookings</h3>
+      <div id="bookingsList">Loading...</div>
+    </div>
+  </main>
+
+  <script>
+    const API = "http://localhost:5000/api";
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!user) {
+      alert("You need to log in first!");
+      window.location.href = "login.html";
+    }
+
+    document.getElementById("userName").textContent = user.name;
+    document.getElementById("userPhone").textContent = user.phone;
+
+    async function loadBookings() {
+      try {
+        const res = await fetch(`${API}/bookings`);
+        const data = await res.json();
+
+        const list = document.getElementById("bookingsList");
+        list.innerHTML = "";
+
+        if (!data || data.length === 0) {
+          list.textContent = "No bookings yet.";
+          return;
+        }
+
+        data
+          .filter(b => b.customerPhone === user.phone)
+          .forEach(b => {
+            const div = document.createElement("div");
+            div.className = "booking";
+            div.innerHTML = `
+              <b>${b.houseTitle}</b><br>
+              Amount: KES ${b.amount}<br>
+              Status: ${b.status}<br>
+              Date: ${new Date(b.createdAt).toLocaleString()}
+            `;
+            list.appendChild(div);
+          });
+      } catch (err) {
+        console.error(err);
+        document.getElementById("bookingsList").textContent = "Failed to load bookings.";
+      }
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+
+    loadBookings();
+  </script>
+</body>
+</html>

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard - Fixed</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="style.css">
+
+<style>
+  body { background:#f4f6f8; font-family:Arial, sans-serif; }
+
+  .admin-wrap {
+    padding:20px; max-width:1100px; margin:auto;
+  }
+
+  .top-bar {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:18px;
+  }
+
+  .top-bar a { font-size:15px; text-decoration:none; }
+
+  .section-box {
+    background:#fff; padding:18px; border-radius:10px;
+    margin-bottom:25px; box-shadow:0 3px 10px rgba(0,0,0,0.08);
+  }
+
+  .list-item {
+    border-bottom:1px solid #eee; padding:12px 0;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+
+  .list-item:last-child { border-bottom:none; }
+
+  .btn-small {
+    padding:6px 12px; border-radius:6px; font-size:14px; cursor:pointer;
+    border:none; transition:0.2s;
+  }
+
+  .btn-small:hover { opacity:0.8; }
+
+  .danger { background:#c62828; color:#fff; }
+  .green { background:#00a14b; color:#fff; }
+  .blue { background:#1565c0; color:#fff; }
+
+  img.house-thumb {
+    width:110px; height:75px; object-fit:cover; border-radius:6px;
+    margin-right:10px;
+  }
+
+  .flex { display:flex; align-items:center; gap:12px; }
+
+  .status-tag {
+    padding:3px 7px; background:#ececec; border-radius:6px;
+    font-size:12px;
+  }
+
+  @media(max-width:600px){
+    .list-item { flex-direction:column; align-items:flex-start; }
+    img.house-thumb { width:100%; height:150px; }
+  }
+
+  /* Modal */
+  .modal {
+    position:fixed; top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.5);
+    display:flex; justify-content:center; align-items:center;
+    visibility:hidden; opacity:0; transition:0.3s;
+  }
+  .modal.active { visibility:visible; opacity:1; }
+  .modal-content {
+    background:white; padding:20px; border-radius:8px;
+    width:90%; max-width:450px;
+  }
+  .modal-content input, .modal-content textarea {
+    width:100%; margin-bottom:10px; padding:8px; border:1px solid #ddd; border-radius:5px;
+  }
+</style>
+</head>
+
+<body>
+<div class="admin-wrap">
+
+  <div class="top-bar">
+    <h2>Admin Dashboard</h2>
+    <div>
+      <a href="#" id="logoutBtn">🚪 Logout</a>
+    </div>
+  </div>
+
+  <!-- ADD HOUSE -->
+  <div class="section-box">
+    <h3>➕ Add New House</h3>
+    <form id="addHouseForm" enctype="multipart/form-data">
+      <input type="text" id="title" placeholder="House Title" required>
+      <input type="text" id="location" placeholder="Location" required>
+      <input type="number" id="price" placeholder="Price (KES)" required>
+      <textarea id="description" placeholder="Description" required></textarea>
+      <input type="file" id="image" required>
+      <button type="submit" class="btn-small green">Add House</button>
+    </form>
+  </div>
+
+  <!-- Houses -->
+  <div class="section-box">
+    <h3>🏘️ Houses</h3>
+    <div id="houseList">Loading...</div>
+  </div>
+
+  <!-- Viewing Requests -->
+  <div class="section-box">
+    <h3>📅 Viewing Requests</h3>
+    <div id="reqList">Loading...</div>
+  </div>
+
+  <!-- Bookings -->
+  <div class="section-box">
+    <h3>💳 Bookings</h3>
+    <div id="booksList">Loading...</div>
+  </div>
+
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <h3>Edit House</h3>
+    <input type="text" id="editTitle" placeholder="Title">
+    <input type="text" id="editLocation" placeholder="Location">
+    <input type="number" id="editPrice" placeholder="Price">
+    <textarea id="editDesc" placeholder="Description"></textarea>
+    <input type="file" id="editImage">
+    <button id="saveEditBtn" class="btn-small blue">💾 Save</button>
+    <button id="cancelEditBtn" class="btn-small danger">❌ Cancel</button>
+  </div>
+</div>
+
+<script>
+const API = "http://localhost:5000/api";
+
+// ✅ Load admin details
+const user = JSON.parse(localStorage.getItem("user") || "null");
+const token = localStorage.getItem("token");
+
+if (!user || !user.isAdmin || !token) {
+  alert("Access denied. Admins only.");
+  localStorage.clear();
+  window.location = "admin_login.html";
+}
+
+// helper to build image URL safely
+function imageUrl(path) {
+  if (!path) return 'https://via.placeholder.com/110x75?text=No+Image';
+  return path.startsWith('http') ? path : `http://localhost:5000${path}`;
+}
+
+// helper to safely extract id from objects (works whether server uses _id or id)
+function getId(obj) {
+  return obj.id || obj._id || obj._id?.['$oid'] || obj.ID || null;
+}
+
+// --- ADD NEW HOUSE ---
+document.getElementById("addHouseForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("title", document.getElementById("title").value);
+  formData.append("location", document.getElementById("location").value);
+  formData.append("price", document.getElementById("price").value);
+  formData.append("description", document.getElementById("description").value);
+  const image = document.getElementById("image").files[0];
+  if (image) formData.append("image", image);
+
+  try {
+    const res = await fetch(`${API}/houses`, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token }, // don't set Content-Type when sending FormData
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to add house');
+    alert(data.message || 'House added');
+    document.getElementById("addHouseForm").reset();
+    loadHouses();
+  } catch (err) {
+    alert("Failed to add house: " + err.message);
+    console.error(err);
+  }
+});
+
+// --- LOAD HOUSES ---
+async function loadHouses() {
+  try {
+    const res = await fetch(`${API}/houses`, {
+      headers: { Authorization: "Bearer " + token, Accept: 'application/json' }
+    });
+    const data = await res.json();
+    const wrap = document.getElementById("houseList");
+
+    if (!Array.isArray(data) || !data.length) return wrap.innerHTML = "No houses yet.";
+
+    wrap.innerHTML = data.map(h => {
+      const id = getId(h);
+      return `
+      <div class="list-item">
+        <div class="flex">
+          <img src="${imageUrl(h.image)}" class="house-thumb">
+          <div>
+            <b>${h.title}</b><br>${h.location} — <b>KES ${Number(h.price).toLocaleString()}</b>
+          </div>
+        </div>
+        <div>
+          <button class="btn-small blue" onclick="openEditModal('${id}')">Edit</button>
+          <button class="btn-small danger" onclick="deleteHouse('${id}')">Delete</button>
+        </div>
+      </div>
+    `}).join("");
+  } catch (err) {
+    console.error("Error loading houses:", err);
+    document.getElementById("houseList").innerHTML = "Failed to load houses.";
+  }
+}
+
+// --- DELETE HOUSE ---
+async function deleteHouse(id) {
+  if (!id) return alert('Invalid house id');
+  if (!confirm("Delete this house permanently?")) return;
+  try {
+    const res = await fetch(`${API}/houses/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: "Bearer " + token }
+    });
+    const data = await res.json().catch(()=>({}));
+    if (!res.ok) throw new Error(data.message || 'Delete failed');
+    alert(data.message || 'House deleted');
+    loadHouses();
+  } catch (err) {
+    alert("Failed to delete house: " + err.message);
+    console.error(err);
+  }
+}
+
+// --- EDIT HOUSE ---
+let currentEditId = null;
+async function openEditModal(id) {
+  if (!id) return alert('Invalid id');
+  currentEditId = id;
+  // fetch house details and populate modal so user doesn't accidentally overwrite with blanks
+  try {
+    const res = await fetch(`${API}/houses/${id}`, {
+      headers: { Authorization: "Bearer " + token, Accept: 'application/json' }
+    });
+    const h = await res.json();
+    if (!res.ok) throw new Error(h.message || 'Could not fetch house details');
+
+    document.getElementById('editTitle').value = h.title || '';
+    document.getElementById('editLocation').value = h.location || '';
+    document.getElementById('editPrice').value = h.price || '';
+    document.getElementById('editDesc').value = h.description || '';
+    // note: we don't set the file input for security reasons; user can choose a new image if desired
+
+    document.getElementById("editModal").classList.add("active");
+  } catch (err) {
+    alert('Failed to load house for editing: ' + err.message);
+    console.error(err);
+  }
+}
+
+document.getElementById("cancelEditBtn").onclick = () => {
+  document.getElementById("editModal").classList.remove("active");
+};
+
+document.getElementById("saveEditBtn").onclick = async () => {
+  if (!currentEditId) return alert('No house selected');
+  const formData = new FormData();
+  formData.append("title", document.getElementById("editTitle").value);
+  formData.append("location", document.getElementById("editLocation").value);
+  formData.append("price", document.getElementById("editPrice").value);
+  formData.append("description", document.getElementById("editDesc").value);
+  const image = document.getElementById("editImage").files[0];
+  if (image) formData.append("image", image);
+
+  try {
+    const res = await fetch(`${API}/houses/${currentEditId}`, {
+      method: "PUT",
+      headers: { Authorization: "Bearer " + token },
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Update failed');
+    alert(data.message || 'House updated');
+    document.getElementById("editModal").classList.remove("active");
+    loadHouses();
+  } catch (err) {
+    console.error("Edit failed:", err);
+    alert("Failed to update house: " + err.message);
+  }
+};
+
+// --- LOAD VIEW REQUESTS ---
+async function loadRequests() {
+  try {
+    const res = await fetch(`${API}/view-requests`, {
+      headers: { Authorization: "Bearer " + token, Accept: 'application/json' }
+    });
+    const data = await res.json();
+    const wrap = document.getElementById("reqList");
+
+    if (!Array.isArray(data) || !data.length) return wrap.innerHTML = "No viewing requests yet.";
+
+    wrap.innerHTML = data.map(r => {
+      const id = getId(r);
+      return `
+      <div class="list-item">
+        <div>
+          <b>${r.name}</b> (${r.phone})<br>
+          House: ${r.houseTitle || r.house?.title || '—'}<br>
+          Date: ${r.date}
+        </div>
+        <div>
+          <span class="status-tag">${r.status || "pending"}</span>
+          ${r.status !== "approved" ? `<button class="btn-small green" onclick="approveRequest('${id}')">Approve</button>` : ""}
+        </div>
+      </div>
+    `}).join("");
+  } catch (err) {
+    console.error("Error loading requests:", err);
+    document.getElementById("reqList").innerHTML = "Failed to load requests.";
+  }
+}
+
+async function approveRequest(id) {
+  if (!id) return alert('Invalid request id');
+  try {
+    const res = await fetch(`${API}/view-requests/${id}/approve`, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token }
+    });
+    const data = await res.json().catch(()=>({}));
+    if (!res.ok) throw new Error(data.message || 'Approve failed');
+    alert(data.message || 'Request approved');
+    loadRequests();
+  } catch (err) {
+    alert("Failed to approve request: " + err.message);
+    console.error(err);
+  }
+}
+
+// --- LOAD BOOKINGS ---
+async function loadBookings() {
+  try {
+    const res = await fetch(`${API}/bookings`, {
+      headers: { Authorization: "Bearer " + token, Accept: 'application/json' }
+    });
+    const data = await res.json();
+    const wrap = document.getElementById("booksList");
+
+    if (!Array.isArray(data) || !data.length) return wrap.innerHTML = "No bookings yet.";
+
+    wrap.innerHTML = data.map(b => {
+      const id = getId(b);
+      return `
+      <div class="list-item">
+        <div>
+          <b>${b.customerName}</b> (${b.customerPhone})<br>
+          House: ${b.houseTitle}<br>
+          Amount: KES ${b.amount}
+        </div>
+        <div>
+          <span class="status-tag">${b.status}</span>
+          ${b.status !== "approved" ? `<button class="btn-small green" onclick="approveBooking('${id}')">Approve</button>` : ""}
+        </div>
+      </div>
+    `}).join("");
+  } catch (err) {
+    console.error("Error loading bookings:", err);
+    document.getElementById("booksList").innerHTML = "Failed to load bookings.";
+  }
+}
+
+async function approveBooking(id) {
+  if (!id) return alert('Invalid booking id');
+  try {
+    const res = await fetch(`${API}/bookings/${id}/approve`, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token }
+    });
+    const data = await res.json().catch(()=>({}));
+    if (!res.ok) throw new Error(data.message || 'Approve failed');
+    alert(data.message || 'Booking approved');
+    loadBookings();
+  } catch (err) {
+    alert("Failed to approve booking: " + err.message);
+    console.error(err);
+  }
+}
+
+// --- LOGOUT ---
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.clear();
+  alert("Logged out successfully!");
+  location.href = "admin_login.html";
+});
+
+// --- INIT ---
+loadHouses();
+loadRequests();
+loadBookings();
+</script>
+
+</body>
+</html>

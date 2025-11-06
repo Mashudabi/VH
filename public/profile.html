@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>My Profile</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button onclick="history.back()">⬅️ Back</button>
+
+<h2>My Profile</h2>
+<p id="name"></p>
+<p id="phone"></p>
+
+<h3>My Booked Houses</h3>
+<div id="list"></div>
+
+<hr>
+<h3>Help</h3>
+<p>Admin Phone: 0712345678</p>
+<p>Email: admin@houses.com</p>
+<a href="https://wa.me/254712345678">Chat Admin WhatsApp</a>
+
+<button onclick="logout()">Logout</button>
+
+<script>
+const u = JSON.parse(localStorage.getItem("user"));
+if (!u) location.href = "login.html";
+name.innerHTML = "Name: " + u.name;
+phone.innerHTML = "Phone: " + u.phone;
+
+async function loadBookings() {
+  const r = await fetch("http://localhost:5000/api/bookings");
+  const all = await r.json();
+  const mine = all.filter(b => b.customerPhone === u.phone && b.status === "approved");
+
+  list.innerHTML = mine.map(m => `
+    ✅ ${m.houseTitle} — PAID
+  `).join("");
+}
+loadBookings();
+
+function logout() {
+  localStorage.clear();
+  location.href = "login.html";
+}
+</script>
+
+</body>
+</html>

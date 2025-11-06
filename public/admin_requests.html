@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin — Requests & Bookings</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="style.css">
+
+<style>
+body {
+  background:#f4f7fb;
+}
+
+.container {
+  max-width: 900px;
+  margin:auto;
+  padding:15px;
+}
+
+.admin-box {
+  max-width: 400px;
+  margin: 40px auto;
+  background:white;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  margin-bottom: 20px;
+}
+.admin-box input {
+  width: 100%;
+  padding: 11px;
+  margin: 6px 0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.btn {
+  background:#333;
+  color:white;
+  border:none;
+  padding:10px;
+  width:100%;
+  cursor:pointer;
+  border-radius:6px;
+}
+.btn:hover {
+  background:#000;
+}
+
+.logout-btn {
+  float:right;
+  font-size:14px;
+  margin-left:10px;
+}
+
+.table {
+  width:100%;
+  border-collapse: collapse;
+  margin-top:12px;
+  background:white;
+  border-radius:8px;
+  overflow:hidden;
+}
+.table th {
+  background:#222;
+  color:#fff;
+  padding:10px;
+  text-align:left;
+}
+.table td {
+  border:1px solid #ddd;
+  padding:8px;
+  font-size:14px;
+}
+.section-title {
+  margin-top:30px;
+  margin-bottom:5px;
+  font-size:20px;
+  font-weight:bold;
+}
+
+.badge {
+  padding:4px 8px;
+  border-radius:5px;
+  font-size:12px;
+  color:white;
+}
+.badge-pending { background:#f39c12; }
+.badge-ok { background:#27ae60; }
+
+.action-btn {
+  padding:4px 7px;
+  cursor:pointer;
+  font-size:12px;
+  border:none;
+  border-radius:5px;
+}
+.approve-btn { background:#2ecc71; color:#fff; }
+.delete-btn { background:#e74c3c; color:#fff; }
+
+#searchInput {
+  padding:8px;
+  width:100%;
+  border:1px solid #bbb;
+  border-radius:6px;
+  margin-bottom:10px;
+}
+
+.loading {
+  font-size:14px;
+  display:none;
+  color:#000;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h2>Admin Panel — Requests & Bookings</h2>
+
+  <a href="admin.html" class="logout-btn">🏠 Houses Admin</a>
+  <a href="#" id="logoutBtn" class="logout-btn">🚪 Logout</a>
+  <div style="clear:both;"></div>
+
+  <!-- Admin Login -->
+  <div id="loginBox" class="admin-box">
+    <h3>Admin Login</h3>
+    <input id="adminPhone" placeholder="Admin phone">
+    <input id="adminPass" placeholder="Admin password" type="password">
+    <button id="adminLogin" class="btn">Login</button>
+    <p id="adminMsg" class="tiny"></p>
+  </div>
+
+  <div id="panel" style="display:none;">
+
+    <input id="searchInput" placeholder="🔍 Search name or phone...">
+
+    <div class="loading" id="loading">⏳ Loading data...</div>
+
+    <div class="section-title">Requests</div>
+    <table class="table" id="requestsTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>House</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="requestsList"></tbody>
+    </table>
+
+    <div class="section-title">Confirmed Bookings</div>
+    <table class="table" id="bookingsTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>House</th>
+          <th>Pay No.</th>
+        </tr>
+      </thead>
+      <tbody id="bookingsList"></tbody>
+    </table>
+
+  </div>
+</div>
+
+<script>
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.removeItem("adminAuth");
+  alert("Logged out");
+  location.reload();
+});
+
+// Search filter
+document.getElementById("searchInput").addEventListener("input", () => {
+  let value = event.target.value.toLowerCase();
+  document.querySelectorAll("#requestsList tr").forEach(row => {
+    row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
+  });
+});
+</script>
+
+<script src="admin_requests.js"></script>
+
+</body>
+</html>

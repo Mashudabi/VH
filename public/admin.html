@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel - Add House</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="style.css">
+
+<style>
+  .admin-box {
+    max-width: 450px;
+    margin: auto;
+    padding: 20px;
+    border-radius: 10px;
+    background: #f7f7f7;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .admin-box h2 {
+    margin-bottom: 15px;
+  }
+
+  .admin-box input, .admin-box textarea, .admin-box button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  #previewImg {
+    width: 100%;
+    margin: 10px 0;
+    border-radius: 8px;
+    display:none;
+  }
+
+  .top-links {
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:10px;
+    font-size:14px;
+  }
+
+  label {
+    margin-top: 5px;
+    font-weight: bold;
+  }
+
+  .btn-upload {
+    background:#0c7c0c;
+    color:white;
+    font-weight:bold;
+    border:none;
+    cursor:pointer;
+  }
+
+  .btn-upload:hover {
+    opacity:0.85;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="admin-box">
+  <div class="top-links">
+    <a href="index.html">🏠 View Site</a>
+    <a href="admin_dashboard.html">📊 Dashboard</a>
+    <a href="#" id="logoutBtn" style="color:red;">🚪 Logout</a>
+  </div>
+
+  <h2>Add New House</h2>
+
+  <form id="houseForm" enctype="multipart/form-data">
+    <input type="text" id="title" placeholder="House Title (e.g. Bedsitter)" required>
+    <input type="text" id="location" placeholder="Location (e.g. Nairobi West)" required>
+    <input type="number" id="price" placeholder="Price (KES)" required>
+    <textarea id="description" placeholder="Short description" rows="3" required></textarea>
+    <label>House Image</label>
+    <input type="file" id="image" accept="image/*" required>
+    <img id="previewImg" alt="preview">
+    <button type="submit" class="btn btn-upload">Upload House</button>
+  </form>
+
+  <p id="msg"></p>
+</div>
+
+<script>
+  // ✅ Ensure admin is logged in
+  const adminToken = localStorage.getItem("adminToken");
+  if (!adminToken) {
+    alert("Access denied. Please log in first.");
+    window.location.href = "admin_login.html"; // adjust if your login file name differs
+  }
+
+  // ✅ Preview image
+  document.getElementById("image").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    const img = document.getElementById("previewImg");
+    if(file){
+      img.src = URL.createObjectURL(file);
+      img.style.display = "block";
+    }
+  });
+
+  // ✅ Logout
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("adminToken");
+    alert("Logged out successfully");
+    window.location.href = "index.html";
+  });
+</script>
+
+<script src="admin.js"></script>
+
+</body>
+</html>

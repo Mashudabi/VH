@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>House Details</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="house"></div>
+
+<h3>Book & Pay</h3>
+<input id="name" placeholder="Your Name">
+<input id="phone" placeholder="Phone Used During Signup" disabled>
+<input id="payFrom" placeholder="Mpesa Number to Pay From">
+<button onclick="bookHouse()">Proceed to Pay</button>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+const user = JSON.parse(localStorage.getItem("user"));
+phone.value = user?.phone || "";
+
+async function loadHouse() {
+  const res = await fetch(`http://localhost:5000/api/houses/${id}`);
+  const h = await res.json();
+  house.innerHTML = `
+    <img src="http://localhost:5000${h.image}" width="100%">
+    <h2>${h.title}</h2>
+    <p>${h.location}</p>
+    <p>Kes ${h.price}</p>
+    <p>${h.description}</p>
+  `;
+}
+loadHouse();
+
+async function bookHouse() {
+  const payload = { 
+    houseId: id, 
+    name: name.value, 
+    phone: user.phone, 
+    payFrom: payFrom.value 
+  };
+
+  const r = await fetch("http://localhost:5000/api/book", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await r.json();
+  if (!data.success) return alert("Error: " + data.message);
+
+  alert("Continue with Mpesa — then click OK");
+
+  // Simulate payment success
+  await fetch(`http://localhost:5000/api/bookings/${data.booking.id}/pay`, { method: "POST" });
+
+  alert("✅ Payment received — house booked!");
+  location.href = "profile.html";
+}
+</script>
+
+</body>
+</html>
