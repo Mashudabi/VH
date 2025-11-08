@@ -1,22 +1,28 @@
-const API = "http://localhost:5000/api";
+// Use environment variable for API, fallback to localhost for local dev
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 // --- ADMIN LOGIN ---
 document.getElementById("adminLogin")?.addEventListener("click", async () => {
   const phone = document.getElementById("adminPhone").value;
   const pass = document.getElementById("adminPass").value;
 
-  const res = await fetch(`${API}/admin/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, password: pass })
-  });
+  try {
+    const res = await fetch(`${API}/admin/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, password: pass })
+    });
 
-  const data = await res.json();
-  if (!data.success) return alert(data.message);
+    const data = await res.json();
+    if (!data.success) return alert(data.message);
 
-  localStorage.setItem("adminAuth", data.token);
-  alert("✅ Admin Login Successful");
-  location.href = "admin_dashboard.html";
+    localStorage.setItem("adminAuth", data.token);
+    alert("✅ Admin Login Successful");
+    location.href = "admin_dashboard.html";
+  } catch (err) {
+    console.error(err);
+    alert("❌ Failed to connect to server");
+  }
 });
 
 // --- ADD HOUSE ---
@@ -30,15 +36,22 @@ document.getElementById("houseForm")?.addEventListener("submit", async (e) => {
   form.append("description", document.getElementById("description").value);
   form.append("image", document.getElementById("image").files[0]);
 
-  const res = await fetch(`${API}/houses`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${localStorage.getItem("adminAuth")}` },
-    body: form
-  });
+  try {
+    const res = await fetch(`${API}/houses`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${localStorage.getItem("adminAuth")}` },
+      body: form
+    });
 
-  const data = await res.json();
-  alert("✅ House Added");
-  location.href = "admin_dashboard.html";
+    const data = await res.json();
+    if (!data.success) return alert(data.message);
+
+    alert("✅ House Added");
+    location.href = "admin_dashboard.html";
+  } catch (err) {
+    console.error(err);
+    alert("❌ Failed to add house");
+  }
 });
 
 // --- LOGOUT ---
