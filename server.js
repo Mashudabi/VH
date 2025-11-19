@@ -7,7 +7,6 @@ import { fileURLToPath } from "url";
 import multer from "multer";
 import dotenv from "dotenv";
 import { v2 as cloudinary } from "cloudinary";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 dotenv.config();
 
@@ -62,14 +61,10 @@ cloudinary.config({
   api_secret: process.env.CLOUD_API_SECRET
 });
 
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: "vacant_houses",
-    allowed_formats: ["jpg", "jpeg", "png"],
-  },
-});
-const upload = multer({ storage });
+// Use local disk storage for uploads to avoid requiring the deprecated
+// `multer-storage-cloudinary` package. Files will be saved to the local
+// `uploads` directory and the path will be available on `req.file.path`.
+const upload = multer({ dest: path.join(__dirname, 'uploads') });
 
 // ===== Helpers =====
 const readDB = () => JSON.parse(fs.readFileSync(dbPath));
