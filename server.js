@@ -512,7 +512,16 @@ app.get("*", (req, res) => {
   if (req.path.startsWith("/api/")) {
     return res.status(404).json({ success: false, message: "API endpoint not found" });
   }
-  res.sendFile(path.join(publicDir, "index.html"));
+
+  // Prefer serving a landing page if present (landing.html) so the root
+  // can be a public splash page while the main app remains available at
+  // /index.html or other routes.
+  const landingPath = path.join(publicDir, 'landing.html');
+  const indexPath = path.join(publicDir, 'index.html');
+  if (fs.existsSync(landingPath)) return res.sendFile(landingPath);
+  if (fs.existsSync(indexPath)) return res.sendFile(indexPath);
+
+  return res.status(404).send('Not found');
 });
 
 // ==========================

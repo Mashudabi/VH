@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VH — Vacant Houses</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root{ --bg1:#007bff; --bg2:#00c48c; --text:#04263a }
+    html,body{height:100%;margin:0;font-family:Inter,Arial,Helvetica,sans-serif}
+    body{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--bg1),var(--bg2));}
+    .card{background:rgba(255,255,255,0.98);padding:28px;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,0.18);text-align:center;min-width:280px}
+    .logo{width:96px;height:96px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;border-radius:22px;background:linear-gradient(135deg,rgba(0,0,0,0.06),rgba(255,255,255,0.06));font-weight:700;font-size:36px;color:var(--bg1);}
+    .title{font-size:20px;color:var(--text);font-weight:700;margin-bottom:8px}
+    .subtitle{color:#345;opacity:0.85;margin-bottom:18px}
+    .cta{display:flex;gap:12px;justify-content:center}
+    .btn{padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+    .btn-primary{background:var(--bg1);color:#fff}
+    .btn-ghost{background:transparent;border:1px solid #ddd;color:#333}
+    .small{font-size:13px;color:#666;margin-top:12px}
+    @media(min-width:900px){ .card{min-width:420px} }
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <div class="logo">VH</div>
+    <div class="title">vacant houses</div>
+    <div class="subtitle">Find and book properties quickly</div>
+
+    <div class="cta">
+      <button class="btn btn-primary" id="openBtn">Get Started</button>
+      <button class="btn btn-ghost" id="loginBtn">Login</button>
+    </div>
+    <div class="small">Tap Get Started to create an account or Login to access your dashboard</div>
+  </div>
+
+  <script>
+    // On tap, show small animation then redirect
+    function goToSignup(){
+      const btn = document.getElementById('openBtn');
+      btn.disabled = true;
+      btn.textContent = 'Loading...';
+      setTimeout(()=> location.href = '/signup.html', 600);
+    }
+    document.getElementById('openBtn').addEventListener('click', goToSignup);
+    document.getElementById('loginBtn').addEventListener('click', ()=> location.href = '/login.html');
+  </script>
+</body>
+</html>
