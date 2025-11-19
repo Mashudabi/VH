@@ -13,6 +13,13 @@
       "phone": "adminMashud",
       "pass": "38935567",
       "isAdmin": true
+    },
+    {
+      "id": 1763580619430,
+      "name": "System Admin",
+      "phone": "changeme",
+      "pass": "changeme",
+      "isAdmin": true
     }
   ],
   "houses": [],
