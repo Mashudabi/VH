@@ -20,7 +20,20 @@ app.use(express.json());
 // ===== File Paths =====
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const publicDir = path.join(__dirname, "public");
+let publicDir = path.join(__dirname, "public");
+// Some development environments (Windows) are case-insensitive and may have
+// committed the static folder with a different capitalization (e.g. `Public`).
+// On Linux (Render) the filesystem is case-sensitive; if the expected
+// `public` folder isn't found, try `Public` as a fallback to avoid ENOENT.
+if (!fs.existsSync(publicDir)) {
+  const altPublic = path.join(__dirname, "Public");
+  if (fs.existsSync(altPublic)) {
+    publicDir = altPublic;
+    console.log("ℹ️ Using fallback static folder:", publicDir);
+  } else {
+    console.warn("⚠️ Static public folder not found at:", path.join(__dirname, "public"), "or", altPublic);
+  }
+}
 const dbPath = path.join(__dirname, "db.json");
 
 // ===== Ensure db.json exists =====
