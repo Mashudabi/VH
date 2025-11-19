@@ -1,5 +1,5 @@
 // Use Render backend API directly
-const API = "https://vacant-houses-backend-1.onrender.com/api";
+const API = "https://vacant-houses-backend-2.onrender.com/api";
 
 // --- ADMIN LOGIN ---
 document.getElementById("adminLogin")?.addEventListener("click", async () => {
