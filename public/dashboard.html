@@ -55,6 +55,20 @@
       margin-bottom: 10px;
       background: #fafafa;
     }
+    /* Display houses in two rows that fill columns left-to-right */
+    #housesList {
+      display: grid;
+      grid-auto-flow: column;
+      grid-template-rows: repeat(2, auto);
+      grid-auto-columns: minmax(220px, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    @media (max-width: 600px) {
+      /* On small screens, fall back to single column stacked list */
+      #housesList { display: block; }
+      .house { margin-bottom: 12px; }
+    }
     .house img {
       max-width: 100%;
       border-radius: 6px;
