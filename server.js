@@ -78,7 +78,15 @@ cloudinary.config({
 // Use local disk storage for uploads to avoid requiring the deprecated
 // `multer-storage-cloudinary` package. Files will be saved to the local
 // `uploads` directory and the path will be available on `req.file.path`.
-const upload = multer({ dest: path.join(__dirname, 'uploads') });
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('🗂️ Created uploads directory at', uploadsDir);
+}
+const upload = multer({ dest: uploadsDir });
+
+// Serve uploaded files at /uploads/<filename>
+app.use('/uploads', express.static(uploadsDir));
 
 // ===== Helpers =====
 const readDB = () => JSON.parse(fs.readFileSync(dbPath));
@@ -166,8 +174,9 @@ app.post("/api/houses", upload.single("image"), (req, res) => {
   // Handle both file upload (multer) and Cloudinary URL (JSON)
   let imagePath = null;
   if (req.file) {
-    // File uploaded via multer
-    imagePath = req.file.path;
+    // File uploaded via multer - store a web-accessible relative path
+    // so the frontend can request it as `${BACKEND_URL}/uploads/<filename>`
+    imagePath = `/uploads/${req.file.filename}`;
   } else if (image && typeof image === 'string' && image.startsWith('http')) {
     // Cloudinary URL sent in JSON body
     imagePath = image;
@@ -203,7 +212,7 @@ app.put("/api/houses/:id", upload.single("image"), (req, res) => {
   let imagePath = old.image;
   if (req.file) {
     // File uploaded via multer
-    imagePath = req.file.path;
+    imagePath = `/uploads/${req.file.filename}`;
   } else if (image && typeof image === 'string' && image.startsWith('http')) {
     // Cloudinary URL sent in JSON body
     imagePath = image;
