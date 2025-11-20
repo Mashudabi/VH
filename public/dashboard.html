@@ -303,17 +303,11 @@
         houses.forEach(h => {
           const div = document.createElement("div");
           div.className = "house";
-          // Handle both Cloudinary URLs and local paths
-          let imageUrl = '';
-          if (h.image) {
-            if (h.image.startsWith('http')) {
-              // Cloudinary URL or full URL
-              imageUrl = h.image;
-            } else {
-              // Local path
-              imageUrl = API.replace('/api','') + h.image;
-            }
-          }
+          // Support single image or array of images
+          let images = [];
+          if (Array.isArray(h.image)) images = h.image.slice(0,3);
+          else if (h.image) images = [h.image];
+          const thumb = images.length ? (images[0].startsWith('http') ? images[0] : API.replace('/api','') + images[0]) : '';
           // Check if house is unavailable (paid/booked by someone else)
           const isUnavailable = h.status === "unavailable";
           
@@ -345,7 +339,7 @@
             Location: ${h.location}<br>
             Price: KES ${h.price}<br>
             Description: ${h.description}<br>
-            ${imageUrl ? `<img src="${imageUrl}" alt="${h.title}" style="max-width:100%; border-radius:6px; margin-top:8px;">` : ''}
+              ${thumb ? `<img src="${thumb}" alt="${h.title}" style="max-width:100%; border-radius:6px; margin-top:8px; cursor:zoom-in;" onclick="showZoom('${thumb.replace(/'/g,"\\'")}')">` : ''}
             ${bookButton}
           `;
           list.appendChild(div);
@@ -542,6 +536,11 @@
     loadHouses();
     loadBookings();
     loadPendingHouses();
+    function showZoom(src){ const m=document.getElementById('zoomModal'); document.getElementById('zoomImg').src=src; m.style.display='flex'; }
   </script>
+  <!-- Image zoom modal -->
+  <div id="zoomModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; z-index:9999;">
+    <img id="zoomImg" src="" style="max-width:95%; max-height:95%; border-radius:8px; cursor:zoom-out;" onclick="document.getElementById('zoomModal').style.display='none'">
+  </div>
 </body>
 </html>

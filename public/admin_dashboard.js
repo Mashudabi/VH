@@ -16,6 +16,7 @@ if (!getAdminToken()) location.href = "admin.html";
 
 function imageUrl(path) {
   if (!path) return "https://via.placeholder.com/110x75?text=No+Image";
+  if (Array.isArray(path)) return path.length ? (path[0].startsWith('http') ? path[0] : `http://localhost:5000${path[0]}`) : "https://via.placeholder.com/110x75?text=No+Image";
   return path.startsWith("http") ? path : `http://localhost:5000${path}`;
 }
 
@@ -101,22 +102,13 @@ document.getElementById("addHouseForm")?.addEventListener("submit", async (e) =>
   const location = document.getElementById("location").value;
   const price = document.getElementById("price").value;
   const description = document.getElementById("description").value;
-  const imageFile = document.getElementById("image").files[0];
+  const imageFiles = Array.from(document.getElementById("image").files || []);
 
   try {
-    let cloudUrl = null;
-    try {
-      cloudUrl = await uploadToCloudinary(imageFile);
-    } catch (err) {
-      console.warn('Cloudinary upload failed, will try server multipart upload as fallback:', err);
-      cloudUrl = null;
-    }
-
     let res;
-    if (imageFile && !cloudUrl) {
-      // Fallback: send multipart/form-data directly to backend so multer on server saves the file
+    if (imageFiles.length > 0) {
       const fd = new FormData();
-      fd.append('image', imageFile);
+      imageFiles.slice(0,3).forEach(f => fd.append('images', f));
       fd.append('title', title);
       fd.append('location', location);
       fd.append('price', price);
@@ -139,7 +131,7 @@ document.getElementById("addHouseForm")?.addEventListener("submit", async (e) =>
           location,
           price,
           description,
-          image: cloudUrl
+          image: null
         })
       });
     }
@@ -193,25 +185,34 @@ document.getElementById("saveEditBtn").onclick = async () => {
   const location = document.getElementById("editLocation").value;
   const price = document.getElementById("editPrice").value;
   const description = document.getElementById("editDesc").value;
-  const imageFile = document.getElementById("editImage").files[0];
+  const imageFiles = Array.from(document.getElementById("editImage").files || []);
 
   try {
-    const cloudUrl = imageFile ? await uploadToCloudinary(imageFile) : null;
+    let res;
+    if (imageFiles.length > 0) {
+      const fd = new FormData();
+      imageFiles.slice(0,3).forEach(f => fd.append('images', f));
+      fd.append('title', title);
+      fd.append('location', location);
+      fd.append('price', price);
+      fd.append('description', description);
 
-    const res = await fetch(`${API}/houses/${currentEditId}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        title,
-        location,
-        price,
-        description,
-        image: cloudUrl // If null, backend keeps old image
-      })
-    });
+      res = await fetch(`${API}/houses/${currentEditId}`, {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + token },
+        body: fd
+      });
+    } else {
+      const resJson = await fetch(`${API}/houses/${currentEditId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ title, location, price, description, image: null })
+      });
+      res = resJson;
+    }
 
     const data = await res.json();
     if (!data.success) throw new Error(data.message || "Update failed");

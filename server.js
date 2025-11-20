@@ -167,22 +167,39 @@ app.get("/api/houses/:id", (req, res) => {
   res.json(house);
 });
 
-app.post("/api/houses", upload.single("image"), (req, res) => {
+app.post("/api/houses", upload.array("images", 3), (req, res) => {
   let { title, location, price, description, image } = req.body;
   const db = readDB();
-
-  // Handle both file upload (multer) and Cloudinary URL (JSON)
+  // Handle file uploads (multer) and/or Cloudinary URLs (JSON)
   let imagePath = null;
-  if (req.file) {
-    // File uploaded via multer - store a web-accessible relative path
-    // so the frontend can request it as `${BACKEND_URL}/uploads/<filename>`
-    imagePath = `/uploads/${req.file.filename}`;
-  } else if (image && typeof image === 'string' && image.startsWith('http')) {
-    // Cloudinary URL sent in JSON body
-    imagePath = image;
-  } else if (image) {
-    // Local path sent in JSON
-    imagePath = image;
+  const imagePaths = [];
+  if (req.files && req.files.length) {
+    for (const f of req.files) {
+      imagePaths.push(`/uploads/${f.filename}`);
+    }
+  }
+
+  if (image) {
+    // image may be a string (single URL) or JSON array string
+    try {
+      const parsed = JSON.parse(image);
+      if (Array.isArray(parsed)) {
+        parsed.forEach(p => { if (typeof p === 'string') imagePaths.push(p); });
+      } else if (typeof parsed === 'string') {
+        imagePaths.push(parsed);
+      }
+    } catch (err) {
+      // not JSON - treat as single string
+      if (typeof image === 'string') imagePaths.push(image);
+    }
+  }
+
+  if (imagePaths.length === 0) {
+    imagePath = null;
+  } else if (imagePaths.length === 1) {
+    imagePath = imagePaths[0];
+  } else {
+    imagePath = imagePaths; // store as array when multiple
   }
 
   const newHouse = {
@@ -191,7 +208,7 @@ app.post("/api/houses", upload.single("image"), (req, res) => {
     location,
     price: Number(price) || 0,
     description,
-    image: imagePath,
+  image: imagePath,
     isBooked: false
   };
 
@@ -200,7 +217,7 @@ app.post("/api/houses", upload.single("image"), (req, res) => {
   res.json({ success: true, message: "House added successfully", house: newHouse });
 });
 
-app.put("/api/houses/:id", upload.single("image"), (req, res) => {
+app.put("/api/houses/:id", upload.array("images", 3), (req, res) => {
   const db = readDB();
   const idx = db.houses.findIndex(h => String(h.id) === req.params.id);
   if (idx === -1) return res.status(404).json({ message: "House not found" });
@@ -209,16 +226,29 @@ app.put("/api/houses/:id", upload.single("image"), (req, res) => {
   let { title, location, price, description, image } = req.body;
 
   // Handle image update: file upload, Cloudinary URL, or keep existing
+  // Build a resulting image field. Support adding up to 3 images. If no new
+  // files or image data provided, keep the existing value.
   let imagePath = old.image;
-  if (req.file) {
-    // File uploaded via multer
-    imagePath = `/uploads/${req.file.filename}`;
-  } else if (image && typeof image === 'string' && image.startsWith('http')) {
-    // Cloudinary URL sent in JSON body
-    imagePath = image;
-  } else if (image && image !== 'null' && image !== 'undefined') {
-    // Local path or other image value sent in JSON
-    imagePath = image;
+  const newImagePaths = [];
+  if (req.files && req.files.length) {
+    for (const f of req.files) newImagePaths.push(`/uploads/${f.filename}`);
+  }
+
+  if (image) {
+    try {
+      const parsed = JSON.parse(image);
+      if (Array.isArray(parsed)) parsed.forEach(p => { if (typeof p === 'string') newImagePaths.push(p); });
+      else if (typeof parsed === 'string') newImagePaths.push(parsed);
+    } catch (err) {
+      if (typeof image === 'string' && image !== 'null' && image !== 'undefined') newImagePaths.push(image);
+    }
+  }
+
+  if (newImagePaths.length > 0) {
+    // Merge with previous images if previous is array, otherwise start fresh.
+    const prev = Array.isArray(old.image) ? old.image.slice() : (old.image ? [old.image] : []);
+    const merged = prev.concat(newImagePaths).slice(0, 3); // limit to 3 images
+    imagePath = merged.length === 1 ? merged[0] : merged;
   }
 
   db.houses[idx] = {
