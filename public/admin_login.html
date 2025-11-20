@@ -51,10 +51,14 @@
   </div>
 
   <script>
-  // ✅ Automatically detect backend (local or Render)
-  const API = location.hostname === "localhost"
-    ? "http://localhost:5000/api"
-  : "https://vacant-houses-backend-2.onrender.com/api";
+  // ✅ Resolve backend API dynamically: meta[name="api-base-url"] -> window.__API_BASE__ -> fallback
+  function resolveApiBase(){
+    const meta = document.querySelector('meta[name="api-base-url"]')?.content?.trim();
+    if(meta) return meta.endsWith('/api') ? meta : meta.replace(/\/+$/, '') + '/api';
+    if(window.__API_BASE__) { const b=String(window.__API_BASE__).trim(); return b.endsWith('/api') ? b : b.replace(/\/+$/, '') + '/api'; }
+    return location.hostname === 'localhost' ? 'http://localhost:5000/api' : location.origin + '/api';
+  }
+  const API = resolveApiBase();
 
   async function loginAdmin() {
     const phone = document.getElementById("phone").value.trim();

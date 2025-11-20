@@ -191,7 +191,18 @@ const loginPhone = document.getElementById("loginPhone");
 const loginPass = document.getElementById("loginPass");
 
 // ====== API URL ======
-const API = "https://vacant-houses-backend-2.onrender.com/api";
+function resolveApiBase(){
+  const meta = document.querySelector('meta[name="api-base-url"]')?.content?.trim();
+  if(meta){
+    return meta.endsWith('/api') ? meta : meta.replace(/\/+$/, '') + '/api';
+  }
+  if(window.__API_BASE__){
+    const b = String(window.__API_BASE__).trim();
+    return b.endsWith('/api') ? b : b.replace(/\/+$/, '') + '/api';
+  }
+  return (location.hostname === 'localhost' ? 'http://localhost:5000' : location.origin) + '/api';
+}
+const API = resolveApiBase();
 
 // ====== TOKEN & USER ======
 let token = localStorage.getItem("userToken");

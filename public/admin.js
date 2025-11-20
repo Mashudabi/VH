@@ -1,5 +1,17 @@
-// Use Render backend API directly
-const API = "https://vacant-houses-backend-2.onrender.com/api";
+// Resolve API base at runtime (meta tag, injected global, or fallback)
+function resolveApiBase(){
+  if(typeof document !== 'undefined'){
+    const meta = document.querySelector('meta[name="api-base-url"]')?.content?.trim();
+    if(meta) return meta.endsWith('/api') ? meta : meta.replace(/\/+$/, '') + '/api';
+  }
+  if(typeof window !== 'undefined' && window.__API_BASE__){
+    const b = String(window.__API_BASE__).trim();
+    return b.endsWith('/api') ? b : b.replace(/\/+$/, '') + '/api';
+  }
+  // Fallback
+  return (typeof location !== 'undefined' && location.hostname === 'localhost') ? 'http://localhost:5000/api' : (typeof location !== 'undefined' ? location.origin + '/api' : 'http://localhost:5000/api');
+}
+const API = resolveApiBase();
 
 // --- ADMIN LOGIN ---
 document.getElementById("adminLogin")?.addEventListener("click", async () => {
