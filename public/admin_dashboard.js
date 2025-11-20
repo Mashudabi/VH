@@ -104,22 +104,45 @@ document.getElementById("addHouseForm")?.addEventListener("submit", async (e) =>
   const imageFile = document.getElementById("image").files[0];
 
   try {
-    const cloudUrl = await uploadToCloudinary(imageFile);
+    let cloudUrl = null;
+    try {
+      cloudUrl = await uploadToCloudinary(imageFile);
+    } catch (err) {
+      console.warn('Cloudinary upload failed, will try server multipart upload as fallback:', err);
+      cloudUrl = null;
+    }
 
-    const res = await fetch(`${API}/houses`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        title,
-        location,
-        price,
-        description,
-        image: cloudUrl
-      })
-    });
+    let res;
+    if (imageFile && !cloudUrl) {
+      // Fallback: send multipart/form-data directly to backend so multer on server saves the file
+      const fd = new FormData();
+      fd.append('image', imageFile);
+      fd.append('title', title);
+      fd.append('location', location);
+      fd.append('price', price);
+      fd.append('description', description);
+
+      res = await fetch(`${API}/houses`, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token },
+        body: fd
+      });
+    } else {
+      res = await fetch(`${API}/houses`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          title,
+          location,
+          price,
+          description,
+          image: cloudUrl
+        })
+      });
+    }
 
     const data = await res.json();
     if (!data.success) throw new Error(data.message || "Failed to add house");
