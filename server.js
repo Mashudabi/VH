@@ -11,10 +11,35 @@ import { v2 as cloudinary } from "cloudinary";
 dotenv.config();
 
 const app = express();
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "*",
-  credentials: true
-}));
+// CORS: use the `cors` package with a dynamic origin resolver.
+// - If FRONTEND_URL is set, only allow that origin.
+// - Otherwise reflect the incoming Origin header (useful for preview URLs)
+//   and allow requests with no Origin (server-to-server calls).
+// Note: when `credentials: true` is set, Access-Control-Allow-Origin must be
+// a specific origin (not '*'), so we reflect the origin when FRONTEND_URL
+// isn't configured.
+const configuredFrontend = process.env.FRONTEND_URL;
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g., same-origin or server-side)
+    if (!origin) return callback(null, true);
+    if (configuredFrontend) {
+      // Allow only the configured frontend
+      return callback(null, origin === configuredFrontend);
+    }
+    // No configured frontend: accept any origin by reflecting it
+    return callback(null, true);
+  },
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
+
+// Attach CORS middleware and also respond to OPTIONS preflight globally.
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
 app.use(express.json());
 
 // ===== File Paths =====
