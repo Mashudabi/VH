@@ -353,7 +353,7 @@
             Location: ${h.location}<br>
             Price: KES ${h.price}<br>
             Description: ${h.description}<br>
-              ${thumb ? `<img class="zoomable" src="${thumb}" alt="${h.title}" style="max-width:100%; border-radius:6px; margin-top:8px; cursor:zoom-in;" onclick="showZoom('${thumb.replace(/'/g,"\\'")}')">` : ''}
+              ${thumb ? `<img src="${thumb}" alt="${h.title}" style="max-width:100%; border-radius:6px; margin-top:8px;">` : ''}
             ${bookButton}
           `;
           list.appendChild(div);
@@ -552,9 +552,6 @@
     loadPendingHouses();
     function showZoom(src){ const m=document.getElementById('zoomModal'); document.getElementById('zoomImg').src=src; m.style.display='flex'; }
   </script>
-  <!-- Image zoom modal -->
-  <div id="zoomModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; z-index:9999;">
-    <img id="zoomImg" src="" style="max-width:95%; max-height:95%; border-radius:8px; cursor:zoom-out;" onclick="document.getElementById('zoomModal').style.display='none'">
-  </div>
+  <!-- Zoom removed from client dashboard -->
 </body>
 </html>
