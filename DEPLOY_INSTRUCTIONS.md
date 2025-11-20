@@ -1,8 +1,8 @@
-# Deploy Backend to Render and Frontend to Vercel
+# Deploy Backend to Railway and Frontend to Vercel
 
-This document contains safe, copy-pasteable steps and CI templates to deploy the backend to Render and the frontend (static `public/` folder) to Vercel, and to verify they are connected.
+This document contains safe, copy-pasteable steps to deploy the backend to Railway and the frontend (static `public/` folder) to Vercel, and to verify they are connected.
 
-Important: You will need credentials and service/project IDs. Do NOT commit secrets. Use Render and Vercel UI to add secrets to GitHub Actions or use your local CLI with tokens.
+Important: You will need credentials and project/service IDs. Do NOT commit secrets. Use the Railway and Vercel dashboards or CLI to add secrets/environment variables.
 
 ---
 
@@ -10,45 +10,60 @@ Important: You will need credentials and service/project IDs. Do NOT commit secr
 
 1. Push code to your repository's `main` branch.
 
-2. Deploy backend to Render (recommended via Render dashboard):
-   - Go to https://render.com -> New -> Web Service -> Connect your repo.
+2. Deploy backend to Railway (recommended via Railway dashboard):
+   - Go to https://railway.app -> New Project -> Deploy from GitHub -> Connect your repo.
    - Branch: `main`
    - Start Command: `npm start`
-   - Build Command: leave blank (Render will run `npm install`).
-   - Set environment variables in Render service settings:
+   - Railway will install dependencies automatically during build.
+   - Set environment variables in the Railway project settings:
      - `FRONTEND_URL` = `https://<your-vercel-site>.vercel.app` (set after you deploy frontend)
      - (Optional) `CLOUD_NAME`, `CLOUD_API_KEY`, `CLOUD_API_SECRET` if you enable Cloudinary features.
-   - Deploy and copy the service URL (e.g. `https://vacant-houses-backend.onrender.com`).
+   - Deploy and copy the service URL (e.g. `https://<your-service>.up.railway.app` or `https://<your-service>.railway.app`).
 
-3. Point frontend to backend by editing `public/admin_dashboard.html` meta tag:
+3. Point frontend to backend by ensuring your frontend pages include the API base meta tag (the app will also resolve `window.__API_BASE__` at runtime):
    ```html
-   <meta name="api-base-url" content="https://vacant-houses-backend.onrender.com">
+   <meta name="api-base-url" content="https://<your-service>.railway.app">
    ```
-   Commit & push this change.
+   Commit & push this change if you prefer a fixed backend URL; otherwise the frontend runtime resolver can be used.
 
 4. Deploy frontend to Vercel (recommended via Vercel dashboard):
    - Import the repo on https://vercel.com/new.
    - Set the Project Root/Output Directory to `public` so Vercel serves `public/index.html`.
    - Deploy.
 
-5. Update Render CORS: On the Render backend service, set `FRONTEND_URL` to the Vercel url.
+5. Confirm CORS: On the Railway dashboard, set the `FRONTEND_URL` environment variable to your Vercel URL. Our server uses `FRONTEND_URL` (if present) to allow only that origin.
 
 6. Verify: Open `https://<your-vercel-site>/admin_dashboard.html`, open DevTools → Network.
-   - Confirm requests to `https://<your-render-service>/api/dashboard-background` return 200 and valid JSON.
+   - Confirm requests to `https://<your-railway-service>/api/dashboard-background` return 200 and valid JSON.
 
 ---
 
 ## CLI commands (manual deploy)
 
-Render (requires RENDER_API_KEY):
+Railway (using Railway CLI):
 
-PowerShell example (set env var first):
+PowerShell example (install CLI and deploy):
 
 ```pwsh
-$env:RENDER_API_KEY = '<YOUR_RENDER_API_KEY>'
-$serviceId = '<YOUR_RENDER_SERVICE_ID>'
-Invoke-RestMethod -Uri "https://api.render.com/v1/services/$serviceId/deploys" -Method Post -Headers @{ Authorization = "Bearer $env:RENDER_API_KEY" } -Body (@{ clearCache = $true } | ConvertTo-Json ) -ContentType 'application/json'
+# Install Railway CLI (one-time)
+npm i -g @railway/cli
+
+# Login to Railway (interactive)
+railway login
+
+# From repository root, create/init or link project
+railway init   # follow prompts to link to a Railway project OR
+railway up     # deploy current project to Railway
 ```
+
+Set environment variables via CLI (or use the Railway dashboard):
+
+```pwsh
+# Set FRONTEND_URL for the linked project (interactive context required)
+railway variables set FRONTEND_URL "https://<your-vercel-site>.vercel.app"
+```
+
+If you prefer the web UI, open your Railway project → Variables → Add `FRONTEND_URL`.
 
 Vercel (requires VERCEL_TOKEN):
 
@@ -63,25 +78,20 @@ vercel --prod --token $env:VERCEL_TOKEN --confirm
 
 ---
 
-## GitHub Actions (automated on push)
+## CI / Automated deploys
 
-I included a template workflow `.github/workflows/deploy.yml`. Before enabling it, add the following GitHub repository secrets:
+If you want automated deploys from GitHub Actions, you can either:
 
-- `RENDER_API_KEY` — your Render account API key
-- `RENDER_SERVICE_ID` — the backend service id from Render
-- `VERCEL_TOKEN` — your Vercel token
-- `VERCEL_PROJECT_ID` — your Vercel project id
-- `VERCEL_ORG_ID` — your Vercel organization id
-- `RENDER_URL` — the public URL of your Render service (e.g. https://vacant-houses-backend.onrender.com). This is used by the workflow to verify the backend after deploy.
+- Use Railway's GitHub integration (recommended) so commits to `main` trigger builds in Railway.
+- Or use the Railway CLI in GitHub Actions to run `railway up` (requires storing Railway API token/credentials as GitHub secrets).
 
-The workflow will:
-- Trigger backend deploy via Render API
-- Deploy frontend to Vercel using `amondnet/vercel-action`
-
-See `.github/workflows/deploy.yml` for the full template.
+Secrets/variables you may need to store in GitHub Actions or Railway:
+- `RAILWAY_TOKEN` or the token Railway provides for CI (if using CLI in Actions)
+- `VERCEL_TOKEN` — your Vercel token (for frontend deploys)
+- `FRONTEND_URL` — the public Vercel URL (can be set after frontend deploy)
 
 ---
 
 If you want, I can also:
-- Create a Render `render.yaml` or configure more advanced build steps.
-- Help you set the exact secret names and where to find Render service id and Vercel project/org ids.
+- Add a short `railway` job to `.github/workflows/deploy.yml` using the Railway CLI.
+- Provide exact CLI flags for non-interactive CI runs (you'll need to provide the Railway token/secrets).
