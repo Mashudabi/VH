@@ -339,7 +339,7 @@
             Location: ${h.location}<br>
             Price: KES ${h.price}<br>
             Description: ${h.description}<br>
-              ${thumb ? `<img src="${thumb}" alt="${h.title}" style="max-width:100%; border-radius:6px; margin-top:8px; cursor:zoom-in;" onclick="showZoom('${thumb.replace(/'/g,"\\'")}')">` : ''}
+              ${thumb ? `<img class="zoomable" src="${thumb}" alt="${h.title}" style="max-width:100%; border-radius:6px; margin-top:8px; cursor:zoom-in;" onclick="showZoom('${thumb.replace(/'/g,"\\'")}')">` : ''}
             ${bookButton}
           `;
           list.appendChild(div);
