@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Vacant Houses Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+:root {
+  --bg: linear-gradient(135deg, #007bff, #00ff88);
+  --card: #ffffff;
+  --primary: #0d6efd;
+  --dark: #111;
+  --tiny: #777;
+  --bad: #e63946;
+}
+*{box-sizing:border-box}
+body {
+  background: var(--bg);
+  background-attachment: fixed;
+  font-family: Arial, sans-serif;
+  margin: 0; padding: 0;
+  min-height:100vh;
+  color:var(--dark);
+}
+header {
+  background: var(--primary);
+  color: white;
+  padding: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.container { padding: 12px; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.card {
+  background: var(--card);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.amount-card {
+  padding: 8px;
+  background:#fff;
+  border-radius:10px;
+  cursor:pointer;
+  border:1px solid #eee;
+}
+.amount-card:hover { border:1px solid var(--primary); }
+.tiny { font-size: 12px; color:var(--tiny); }
+button {
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:var(--primary);
+  color:white;
+  font-size:16px;
+}
+input {
+  width:100%;
+  padding:10px;
+  margin-top:6px;
+  border:1px solid #ccc;
+  border-radius:6px;
+}
+.hidden { display:none; }
+.profile-box { padding:12px; }
+.link {
+  color:#0000ff;
+  font-size:14px;
+  text-decoration:underline;
+  cursor:pointer;
+}
+.center-card { max-width:360px; margin:40px auto; }
+.back-arrow {
+  font-size:18px;
+  cursor:pointer;
+  padding:10px;
+  display:inline-block;
+  color: var(--primary);
+}
+.house-img { width:100%; height:220px; object-fit:cover; border-radius:8px; }
+.small { font-size:13px }
+@media (min-width:800px){
+  .grid{grid-template-columns:repeat(3,1fr)}
+  .center-card{max-width:420px}
+}
+</style>
+</head>
+<body>
+
+<header id="topHeader" class="hidden">
+  Vacant Houses
+  <div id="profileBtn" style="cursor:pointer;">≡ƒæñ</div>
+</header>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="container center-card card">
+  <h3 style="margin-top:0">Login</h3>
+  <input id="loginPhone" placeholder="Phone e.g 0712345678">
+  <input id="loginPass" type="password" placeholder="Password">
+  <button onclick="login()" style="margin-top:8px; width:100%">Login</button>
+  <p class="tiny" style="margin-top:8px">Don't have account?  
+    <span class="link" onclick="showSignup()">Create Account</span>
+  </p>
+</div>
+
+<!-- SIGNUP PAGE -->
+<div id="signupPage" class="container center-card card hidden">
+  <h3 style="margin-top:0">Create Account</h3>
+  <input id="suName" placeholder="Full Name">
+  <input id="suPhone" placeholder="Phone e.g 0712345678">
+  <input id="suPass" type="password" placeholder="Password">
+  <input id="suPass2" type="password" placeholder="Confirm Password">
+  <button onclick="signup()" style="margin-top:8px; width:100%">Sign Up</button>
+  <p class="tiny" style="margin-top:8px">Already registered?  
+    <span class="link" onclick="showLogin()">Log in</span>
+  </p>
+</div>
+
+<!-- MAIN PAGE -->
+<div id="mainPage" class="container hidden">
+  <h3>Available Houses</h3>
+  <div id="housesGrid" class="grid"></div>
+</div>
+
+<!-- DETAILS PAGE -->
+<div id="detailsPage" class="hidden container">
+  <div class="back-arrow" id="detailsBack">Γ¼à Back</div>
+  <div class="card" style="margin-top:8px;">
+    <img id="detImg" class="house-img" src="">
+    <h3 id="detPrice" style="margin-bottom:4px"></h3>
+    <div id="detLoc" class="tiny small"></div>
+
+    <h4 style="margin-top:12px; margin-bottom:4px">Your details</h4>
+    <input id="custName" placeholder="Full name">
+    <input id="custPhone" placeholder="Phone e.g 0712345678">
+
+    <h4 style="margin-top:12px; margin-bottom:4px">Payment</h4>
+    <div class="tiny">Enter payment phone number (where payment will be made from)</div>
+    <input id="payPhone" placeholder="Payment phone e.g 0712345678">
+    <button onclick="proceedPayment()" style="margin-top:8px; width:100%">Proceed to Pay</button>
+  </div>
+</div>
+
+<!-- PROFILE PAGE -->
+<div id="profilePage" class="hidden container">
+  <div class="back-arrow" id="backArrow">Γ¼à Back to Dashboard</div>
+  <div class="profile-box card">
+    <h3>Your Profile</h3>
+    <div id="pfName" style="font-weight:700"></div>
+    <div id="pfPhone" class="tiny"></div>
+
+    <h4 style="margin-top:12px">Bookings</h4>
+    <div id="bookingsList" class="tiny"></div>
+
+    <div style="margin-top:12px; display:flex; gap:8px;">
+      <button style="flex:1;" onclick="alert('Support will contact you shortly')">Support</button>
+      <button onclick="logout()" style="flex:1; background:var(--bad); color:white;">Logout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ====== DOM ELEMENTS ======
+const loginPage = document.getElementById("loginPage");
+const signupPage = document.getElementById("signupPage");
+const mainPage = document.getElementById("mainPage");
+const detailsPage = document.getElementById("detailsPage");
+const profilePage = document.getElementById("profilePage");
+const topHeader = document.getElementById("topHeader");
+const profileBtn = document.getElementById("profileBtn");
+const housesGrid = document.getElementById("housesGrid");
+const detImg = document.getElementById("detImg");
+const detPrice = document.getElementById("detPrice");
+const detLoc = document.getElementById("detLoc");
+const custName = document.getElementById("custName");
+const custPhone = document.getElementById("custPhone");
+const payPhone = document.getElementById("payPhone");
+const detailsBack = document.getElementById("detailsBack");
+const backArrow = document.getElementById("backArrow");
+const pfName = document.getElementById("pfName");
+const pfPhone = document.getElementById("pfPhone");
+const bookingsList = document.getElementById("bookingsList");
+const suName = document.getElementById("suName");
+const suPhone = document.getElementById("suPhone");
+const suPass = document.getElementById("suPass");
+const suPass2 = document.getElementById("suPass2");
+const loginPhone = document.getElementById("loginPhone");
+const loginPass = document.getElementById("loginPass");
+
+// ====== API URL ======
+const API = "https://vacant-houses-backend-2.onrender.com/api";
+
+// ====== TOKEN & USER ======
+let token = localStorage.getItem("userToken");
+let currentUser = JSON.parse(localStorage.getItem("userData") || "null");
+
+// ====== PAGE SWITCH ======
+function showSignup(){ loginPage.classList.add('hidden'); signupPage.classList.remove('hidden'); }
+function showLogin(){ signupPage.classList.add('hidden'); loginPage.classList.remove('hidden'); }
+
+// ====== SIGNUP ======
+async function signup(){
+  const name = suName.value.trim();
+  const phone = suPhone.value.trim();
+  const pass = suPass.value.trim();
+  const pass2 = suPass2.value.trim();
+  if(pass !== pass2) return alert("Passwords do not match");
+
+  const res = await fetch(API+"/signup", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({name, phone, pass})
+  });
+  const data = await res.json();
+  if(!data.success) return alert(data.message || "Signup failed");
+
+  alert("Γ£à Account created! Please login.");
+  showLogin();
+}
+
+// ====== LOGIN ======
+async function login(){
+  const phone = loginPhone.value.trim();
+  const pass = loginPass.value.trim();
+
+  const res = await fetch(API+"/login", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({phone, pass})
+  });
+  const data = await res.json();
+  if(!data.success) return alert("Invalid phone or password");
+
+  localStorage.setItem("userToken", data.token);
+  localStorage.setItem("userData", JSON.stringify(data.user));
+
+  if(data.user.isAdmin){
+    window.location = "admin_dashboard.html";
+    return;
+  }
+  token = data.token;
+  currentUser = data.user;
+  // Redirect clients to dashboard instead of showing main page
+  window.location.href = "dashboard.html";
+}
+
+// ====== LOGOUT ======
+function logout(){ localStorage.clear(); location.reload(); }
+
+// ====== LOAD HOUSES ======
+async function loadHouses(){
+  const res = await fetch(API+"/houses");
+  const houses = await res.json();
+  housesGrid.innerHTML = "";
+
+  houses.forEach(h=>{
+    const div = document.createElement("div");
+    div.className = "amount-card card";
+    // Handle both Cloudinary URLs and local paths
+    let imageUrl = h.image || '';
+    if (imageUrl && !imageUrl.startsWith('http')) {
+      // Local path - prepend base URL
+      imageUrl = API.replace('/api','') + imageUrl;
+    }
+    div.innerHTML = `
+      ${imageUrl ? `<img src="${imageUrl}" style="width:100%;height:140px;border-radius:8px;object-fit:cover;" onerror="this.style.display='none'">` : '<div style="width:100%;height:140px;background:#eee;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#999;">No Image</div>'}
+      <div style="margin-top:8px;font-weight:700;">KES ${h.price.toLocaleString()}</div>
+      <div class="tiny">${h.location}</div>
+    `;
+    div.onclick = ()=> openDetails(h);
+    housesGrid.appendChild(div);
+  });
+}
+
+// ====== OPEN HOUSE DETAILS ======
+let selectedHouse = null;
+function openDetails(h){
+  selectedHouse = h;
+  // Handle both Cloudinary URLs and local paths
+  let imageUrl = h.image || '';
+  if (imageUrl && !imageUrl.startsWith('http')) {
+    // Local path - prepend base URL
+    imageUrl = API.replace('/api','') + imageUrl;
+  }
+  detImg.src = imageUrl || '';
+  detImg.onerror = function() { this.style.display = 'none'; };
+  detPrice.textContent = `KES ${h.price.toLocaleString()}`;
+  detLoc.textContent = h.location;
+
+  custName.value = currentUser?.name || "";
+  custPhone.value = currentUser?.phone || "";
+  payPhone.value = currentUser?.phone || "";
+
+  mainPage.classList.add("hidden");
+  detailsPage.classList.remove("hidden");
+}
+detailsBack.onclick = ()=>{ detailsPage.classList.add("hidden"); mainPage.classList.remove("hidden"); }
+
+// ====== PAY / BOOK ======
+async function proceedPayment(){
+  const name = custName.value.trim();
+  const phone = custPhone.value.trim();
+  const mpesa = payPhone.value.trim();
+  if(!name || !phone || !mpesa) return alert("Fill all fields");
+
+  const res = await fetch(API+"/book", {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization":"Bearer " + token
+    },
+    body:JSON.stringify({
+      houseId:selectedHouse.id,
+      customerName:name,
+      customerPhone:phone,
+      paymentPhone: mpesa,
+      amount:selectedHouse.price
+    })
+  });
+  const data = await res.json();
+  alert(data.message || "Booking complete!");
+  showProfile();
+}
+
+// ====== PROFILE ======
+profileBtn.onclick = showProfile;
+function showProfile(){
+  pfName.textContent = currentUser.name;
+  pfPhone.textContent = currentUser.phone;
+  detailsPage.classList.add("hidden");
+  mainPage.classList.add("hidden");
+  profilePage.classList.remove("hidden");
+  loadBookings();
+}
+
+// ====== BACK TO DASHBOARD ======
+backArrow.onclick = ()=>{ profilePage.classList.add("hidden"); mainPage.classList.remove("hidden"); };
+
+// ====== LOAD BOOKINGS ======
+async function loadBookings(){
+  const res = await fetch(API+"/bookings", {
+    headers:{ "Authorization":"Bearer " + token }
+  });
+  const data = await res.json();
+  bookingsList.innerHTML = "";
+  if(!data || data.length === 0){
+    bookingsList.innerHTML = "<div>No bookings yet.</div>";
+    return;
+  }
+  data.forEach(b=>{
+    const div = document.createElement("div");
+    div.style.marginBottom = "8px";
+    const statusText = b.status === "approved" 
+      ? `<b style='color:green;'>Approved</b> - <button onclick="continueToPay('${b.id}')">Continue to Pay</button>`
+      : `<b style='color:orange;'>Pending Booking</b>`;
+    div.innerHTML = `
+      <div><b>${b.house?.location || "House"}</b> - KES ${b.amount.toLocaleString()}</div>
+      <div>${statusText}</div>
+    `;
+    bookingsList.appendChild(div);
+  });
+}
+function continueToPay(id){ alert("Redirecting to payment for booking ID: "+id); }
+
+// ====== AUTO SESSION LOGIN ======
+if(token && currentUser){
+  if(currentUser.isAdmin){ window.location = "admin_dashboard.html"; }
+  else { window.location.href = "dashboard.html"; }
+}
+
+// ====== SHOW MAIN PAGE ======
+async function showMain(){
+  loginPage.classList.add("hidden");
+  signupPage.classList.add("hidden");
+  profilePage.classList.add("hidden");
+  detailsPage.classList.add("hidden");
+  topHeader.classList.remove("hidden");
+  mainPage.classList.remove("hidden");
+  await loadHouses();
+}
+</script>
+<script src="/js/nozoom.js" defer></script>
+</body>
+</html>

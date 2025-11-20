@@ -34,6 +34,7 @@ if (!fs.existsSync(publicDir)) {
     console.warn("⚠️ Static public folder not found at:", path.join(__dirname, "public"), "or", altPublic);
   }
 }
+const publicDirExists = fs.existsSync(publicDir) && fs.statSync(publicDir).isDirectory();
 const dbPath = path.join(__dirname, "db.json");
 
 // ===== Ensure db.json exists =====
@@ -499,12 +500,20 @@ app.post("/api/dashboard-background", (req, res) => {
 // ✅ STATIC FILES (must be after API routes)
 // ==========================
 // Only serve static files for non-API routes
-app.use((req, res, next) => {
-  if (req.path.startsWith("/api/")) {
-    return next(); // Skip static files for API routes
-  }
-  express.static(publicDir)(req, res, next);
-});
+// Only mount the static middleware when the public directory exists. If it
+// doesn't exist on the deployed host (for example, when frontend is in a
+// different repository), we mustn't attempt to serve static files from a
+// non-existent path — express.static can trigger ENOENT logs in that case.
+if (publicDirExists) {
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+      return next(); // Skip static files for API routes
+    }
+    express.static(publicDir)(req, res, next);
+  });
+} else {
+  console.warn("⚠️ Skipping static file middleware because public folder is missing:", publicDir);
+}
 
 // Catch-all route for SPA (must be last) - only for non-API GET requests
 app.get("*", (req, res) => {
